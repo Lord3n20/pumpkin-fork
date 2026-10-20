@@ -1843,15 +1843,20 @@ impl LivingEntity {
             } else {
                 self.handle_fall_damage(caller, fall_distance, 1.0);
             }
-        } else if height_difference < 0.0 {
-            let new_fall_distance = if !self.should_prevent_fall_damage()
+        } else {
+            let mut new_fall_distance = if !self.should_prevent_fall_damage()
                 && !self.should_prevent_fall_damage_in_area()
             {
                 let distance = self.fall_distance.load();
-                distance - (height_difference as f32)
+                distance - (height_difference.min(0.0) as f32)
             } else {
                 0f32
             };
+            // Vanilla caps fall distance at 1 while not falling fast, so elytra
+            // gliding, riptide and wind charges do not build up lethal falls.
+            if height_difference > -0.5 {
+                new_fall_distance = new_fall_distance.min(1.0);
+            }
             self.fall_distance.store(new_fall_distance);
         }
     }

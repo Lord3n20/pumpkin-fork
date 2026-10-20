@@ -68,6 +68,15 @@ impl EntityEquipment {
         self.equipment.values().all(ItemStack::is_empty)
     }
 
+    /// Removes and returns all non-empty equipped items.
+    pub fn take_all(&mut self) -> Vec<ItemStack> {
+        self.equipment
+            .drain()
+            .map(|(_, stack)| stack)
+            .filter(|stack| !stack.is_empty())
+            .collect()
+    }
+
     /// Clears all equipped items.
     pub fn clear(&mut self) {
         self.equipment.clear();

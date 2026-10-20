@@ -4762,6 +4762,26 @@ impl Player {
                     self.world().drop_stack(&block_pos, stack);
                 }
             }
+            drop(main_inv);
+            // Armor and off-hand live outside main_inventory and must drop too.
+            let equipment = self
+                .inventory()
+                .entity_equipment
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .take_all();
+            for stack in equipment {
+                self.increment_stat(
+                    statistics::StatisticCategory::Dropped,
+                    stack.item.id as i32,
+                    stack.item_count as i32,
+                );
+                self.increment_custom_stat(
+                    statistics::CustomStatistic::Drop,
+                    stack.item_count as i32,
+                );
+                self.world().drop_stack(&block_pos, stack);
+            }
         }
 
         // Reset air supply & drowning ticks on death
