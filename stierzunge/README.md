@@ -1,6 +1,6 @@
 # Stierzunge-Fork von Pumpkin
 
-Privater Fork von [Pumpkin](https://github.com/Pumpkin-MC/Pumpkin) für den Minecraft-Server auf der Home-Assistant-Box.
+Fork von [Pumpkin](https://github.com/Pumpkin-MC/Pumpkin) für den Minecraft-Server auf der Home-Assistant-Box.
 Branch `stierzunge` basiert auf dem Release-Tag `0.2.0+26.3-26.51` (Minecraft 26.3).
 
 ## Änderungen gegenüber Pumpkin
@@ -19,6 +19,9 @@ Branch `stierzunge` basiert auf dem Release-Tag `0.2.0+26.3-26.51` (Minecraft 26
   Deepslate bzw. Netherrack an den Client; bei Blockänderungen werden versteckte Blöcke im Umkreis
   von 2 Blöcken aufgedeckt. Erze direkt an Chunk-Grenzen bleiben versteckt, bis in der Nähe etwas
   abgebaut wird.
+- **`enable_status`** (Grundeinstellung, Standard `true`): `false` beantwortet keine Serverlisten-Pings,
+  wie Vanilla `enable-status=false` – unsichtbar für Scanner, Beitreten geht weiter.
+- **Uhrzeit im Datei-Log** (`logs/latest.log`, Ortszeit), vorher stand dort nur `[INFO] …`.
 - Upstream-Workflows entfernt, dafür `.github/workflows/stierzunge.yml`.
 
 ## Plugins
@@ -28,11 +31,16 @@ Branch `stierzunge` basiert auf dem Release-Tag `0.2.0+26.3-26.51` (Minecraft 26
 | Plugin | Quelle | Zweck |
 |---|---|---|
 | `pumpkin_voice` | [hmdnnrmn/PumpkinVoice](https://github.com/hmdnnrmn/PumpkinVoice) | Simple Voice Chat (UDP 24454) |
-| `pumpkin_pregen` | [Thijs226/pumpkin-world-pregen](https://github.com/Thijs226/pumpkin-world-pregen) | Vorgenerieren (`/pregen start <radius>`) |
+| `pumpkin_pregen` | [Thijs226/pumpkin-world-pregen](https://github.com/Thijs226/pumpkin-world-pregen) | Vorgenerieren (`/pregen start <radius> [x z [dimension]]`) |
+
+Eigene Änderungen an Plugins liegen als `stierzunge/<plugin>-*.patch` daneben und werden beim Bauen angewendet:
+`pregen-dimension.patch` ergänzt das Argument `overworld`/`the_nether`/`the_end` (Konsole und RCON haben keine
+Welt, und `execute in` erreicht das Plugin nicht) und sucht die Welt im Job über die Dimension statt über den
+Namen – Pumpkin benennt alle drei Dimensionen nach dem Weltordner.
 
 ## Release bauen
 
-Tag setzen und pushen, z. B. `git tag stierzunge-0.2.0-1 && git push origin stierzunge-0.2.0-1`.
+Tag setzen und pushen, z. B. `git tag stierzunge-0.2.0-2 && git push origin stierzunge-0.2.0-2`.
 Der Workflow hängt `pumpkin-X64-Linux-musl`, die `.wasm`-Plugins und `checksums.sha256` an das Release.
 
 Lokal: `RUST_MIN_STACK=268435456 cargo build --release --bin pumpkin` und `stierzunge/plugins.sh`.

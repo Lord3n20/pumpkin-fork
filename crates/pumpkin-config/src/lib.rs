@@ -222,6 +222,8 @@ pub struct BasicConfiguration {
     pub white_list: bool,
     /// Whether to enforce the whitelist.
     pub enforce_whitelist: bool,
+    /// Whether the server answers server-list pings. Off hides it from scanners; joining still works.
+    pub enable_status: bool,
     /// Whether this server accepts incoming transfers from other servers.
     #[serde(alias = "accepts-transfers", alias = "accepts_transfers")]
     pub accepts_transfers: bool,
@@ -250,6 +252,7 @@ impl Default for BasicConfiguration {
             allow_chat_reports: false,
             white_list: false,
             enforce_whitelist: false,
+            enable_status: true,
             accepts_transfers: true,
             spawn_protection: 16,
         }

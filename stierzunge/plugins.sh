@@ -25,6 +25,10 @@ for entry in "${PLUGINS[@]}"; do
   git -C "$dir" fetch -q origin
   git -C "$dir" checkout -q --force "$rev"
   git -C "$dir" clean -qfdx -e target
+  # Our own changes to the plugin, if any (stierzunge/<name>*.patch)
+  for patch in "$ROOT"/stierzunge/"${name#pumpkin_}"-*.patch; do
+    [ -e "$patch" ] && git -C "$dir" apply "$patch"
+  done
 
   # Point the plugin at the API crate of this tree instead of a git rev or crates.io version
   sed -i -E "s|^pumpkin-plugin-api = .*|pumpkin-plugin-api = { path = \"$API\" }|" "$dir/Cargo.toml"

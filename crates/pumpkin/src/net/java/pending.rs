@@ -290,6 +290,11 @@ impl PendingConnection {
         packet: &RawPacket,
     ) -> Result<Option<PacketHandlerResult>, ReadingError> {
         debug!("Handling status group");
+        if !server.basic_config.enable_status {
+            // Like vanilla enable-status=false: no answer, the client shows the server as unreachable
+            self.close();
+            return Ok(None);
+        }
         let mut payload = &packet.payload[..];
         let version = self.version.load();
 

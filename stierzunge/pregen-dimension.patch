@@ -1,0 +1,138 @@
+diff --git a/src/lib.rs b/src/lib.rs
+index 23b1f76..e5fe425 100644
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -1,8 +1,11 @@
+ use std::sync::{Arc, Mutex};
+ 
+ use pumpkin_plugin_api::{
+-    Context, Plugin, PluginMetadata, Server,
+-    command::{Arg, ArgumentType, Command, CommandError, CommandNode, CommandSender, ConsumedArgs},
++    Context, Plugin, PluginMetadata, Server, World,
++    command::{
++        Arg, ArgumentType, Command, CommandError, CommandNode, CommandSender, ConsumedArgs,
++        StringType,
++    },
+     command_wit::Number,
+     commands::CommandHandler,
+     permission::{Permission, PermissionDefault, PermissionLevel},
+@@ -169,7 +172,17 @@ impl Plugin for PumpkinPregen {
+                         CommandNode::argument("center_z", &ArgumentType::Integer((None, None)))
+                             .execute(StartCommand {
+                                 state: Arc::clone(&self.state),
+-                            }),
++                            })
++                            // Console/RCON have no world: overworld, the_nether or the_end
++                            .then(
++                                CommandNode::argument(
++                                    "dimension",
++                                    &ArgumentType::String(StringType::SingleWord),
++                                )
++                                .execute(StartCommand {
++                                    state: Arc::clone(&self.state),
++                                }),
++                            ),
+                     ),
+                 ),
+             ),
+@@ -197,7 +210,7 @@ impl Plugin for PumpkinPregen {
+         if let Some((dimension, world_name, active_forceloads, task_id)) = cleanup {
+             let server = context.get_server();
+             remove_forceloads(&server, &dimension, &active_forceloads);
+-            if let Some(world) = server.get_world_by_name(&world_name) {
++            if let Some(world) = world_of(&server, &world_name) {
+                 let _ = world.save();
+             }
+             if let Some(task_id) = task_id {
+@@ -294,7 +307,21 @@ impl CommandHandler for StartCommand {
+         let center_x = read_i32(&args, "center_x").unwrap_or(0);
+         let center_z = read_i32(&args, "center_z").unwrap_or(0);
+ 
+-        let world = if let Some(world) = sender.world() {
++        // A missing argument comes back as an empty Simple
++        let world = if let Arg::Simple(name) = args.get_value("dimension")
++            && !name.is_empty()
++        {
++            let dimension = format!("minecraft:{name}");
++            let Some(world) = server
++                .get_all_worlds()
++                .into_iter()
++                .find(|candidate| candidate.get_dimension() == dimension)
++            else {
++                send_error(&sender, &format!("Unknown dimension {dimension}."));
++                return Ok(0);
++            };
++            world
++        } else if let Some(world) = sender.world() {
+             world
+         } else {
+             let Some(world) = server
+@@ -328,6 +355,9 @@ impl CommandHandler for StartCommand {
+             );
+             return Ok(0);
+         }
++        // Pumpkin names the Overworld, Nether and End all after the level folder, so the
++        // job keys its world by dimension (see world_of)
++        let world_name = dimension.clone();
+ 
+         let running_message = {
+             let state = self.state.lock().unwrap_or_else(|e| e.into_inner());
+@@ -581,7 +611,7 @@ fn tick_job(server: &Server, shared: &SharedState) {
+             dimension,
+             batch,
+         } => {
+-            let Some(world) = server.get_world_by_name(&world_name) else {
++            let Some(world) = world_of(&server, &world_name) else {
+                 fail_job(
+                     server,
+                     shared,
+@@ -605,7 +635,7 @@ fn tick_job(server: &Server, shared: &SharedState) {
+             dimension,
+             batch,
+         } => {
+-            let Some(world) = server.get_world_by_name(&world_name) else {
++            let Some(world) = world_of(&server, &world_name) else {
+                 fail_job(
+                     server,
+                     shared,
+@@ -699,7 +729,7 @@ fn tick_job(server: &Server, shared: &SharedState) {
+             task_id,
+             completed_chunks,
+         } => {
+-            if let Some(world) = server.get_world_by_name(&world_name)
++            if let Some(world) = world_of(&server, &world_name)
+                 && let Err(error) = world.save()
+             {
+                 warn!("Final world save failed after pregeneration: {error}");
+@@ -726,7 +756,7 @@ fn tick_job(server: &Server, shared: &SharedState) {
+             total_chunks,
+         } => {
+             remove_forceloads(server, &dimension, &forceloads);
+-            if let Some(world) = server.get_world_by_name(&world_name) {
++            if let Some(world) = world_of(&server, &world_name) {
+                 let _ = world.save();
+             }
+             if let Some(task_id) = task_id {
+@@ -761,7 +791,7 @@ fn fail_job(server: &Server, shared: &SharedState, reason: &str) {
+ 
+     let (world_name, dimension, forceloads, task_id) = cleanup;
+     remove_forceloads(server, &dimension, &forceloads);
+-    if let Some(world) = server.get_world_by_name(&world_name) {
++    if let Some(world) = world_of(&server, &world_name) {
+         let _ = world.save();
+     }
+     if let Some(task_id) = task_id {
+@@ -937,6 +967,13 @@ fn remove_forceload(server: &Server, dimension: &str, batch: Batch) {
+     server.execute_command(&command, ServerCommandSender::Console);
+ }
+ 
++fn world_of(server: &Server, dimension: &str) -> Option<World> {
++    server
++        .get_all_worlds()
++        .into_iter()
++        .find(|candidate| candidate.get_dimension() == dimension)
++}
++
+ fn read_i32(args: &ConsumedArgs, key: &str) -> Option<i32> {
+     match args.get_value(key) {
+         Arg::Num(Ok(Number::Int32(value))) => Some(value),

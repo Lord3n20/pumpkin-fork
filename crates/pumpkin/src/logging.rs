@@ -149,6 +149,8 @@ struct GzipRollingLoggerData {
 
 pub struct GzipRollingLogger {
     log_level: LevelFilter,
+    /// Local time offset, read once at startup (reading it later fails once threads run)
+    offset: time::UtcOffset,
     data: std::sync::Mutex<GzipRollingLoggerData>,
 }
 
@@ -188,6 +190,7 @@ impl GzipRollingLogger {
 
         Ok(Self {
             log_level,
+            offset: time::UtcOffset::current_local_offset().unwrap_or(time::UtcOffset::UTC),
             data: std::sync::Mutex::new(GzipRollingLoggerData {
                 current_day_of_month: now.day(),
                 last_rotate_time: now,
@@ -332,7 +335,14 @@ where
             let clean_message = remove_ansi_color_code(&message);
 
             // Write to file
-            let _ = writeln!(data.file, "[{level}] {clean_message}");
+            let local = now.to_offset(self.offset);
+            let _ = writeln!(
+                data.file,
+                "{:02}:{:02}:{:02} [{level}] {clean_message}",
+                local.hour(),
+                local.minute(),
+                local.second()
+            );
             let _ = data.file.flush();
 
             // Check if we need to rotate
