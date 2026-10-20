@@ -1722,13 +1722,29 @@ impl World {
             Vector3<i32>,
             Vec<(BlockPos, BlockStateId)>,
         > = HashMap::new();
-        let changes = {
+        let mut changes = {
             let mut guard = self
                 .unsent_block_changes
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             std::mem::take(&mut *guard)
         };
+        // Anti-xray: ores next to a change may have been sent as stone, send their real state
+        if let Some(anti_xray) = pumpkin_world::anti_xray::get() {
+            let changed: Vec<BlockPos> = changes.keys().copied().collect();
+            for pos in changed {
+                for near in pumpkin_world::anti_xray::AntiXray::reveal_positions(pos) {
+                    if changes.contains_key(&near) {
+                        continue;
+                    }
+                    if let Some(id) = self.get_block_state_id_if_loaded(&near)
+                        && anti_xray.is_hidden_type(id)
+                    {
+                        changes.insert(near, id);
+                    }
+                }
+            }
+        }
         for (position, block_state_id) in changes {
             let chunk_section = chunk_section_from_pos(&position);
             block_state_updates_by_chunk_section
@@ -3295,7 +3311,7 @@ impl World {
                 false,
                 PlayerSpawnData::new(
                     self.dimension.clone(),
-                    biome::hash_seed(self.level.seed.0), // seed
+                    biome::client_hashed_seed(self.level.seed.0), // seed
                     gamemode as u8,
                     player
                         .previous_gamemode
@@ -4413,7 +4429,7 @@ impl World {
             .send_client_packet(&CRespawn::new(
                 PlayerSpawnData::new(
                     target_world.dimension.clone(),
-                    biome::hash_seed(target_world.level.seed.0),
+                    biome::client_hashed_seed(target_world.level.seed.0),
                     player.gamemode.load() as u8,
                     player.gamemode.load() as i8,
                     false,

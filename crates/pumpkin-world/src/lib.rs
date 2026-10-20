@@ -3,6 +3,7 @@
 
 use pumpkin_data::{Block, dimension::Dimension};
 
+pub mod anti_xray;
 pub mod biome;
 pub mod block;
 pub mod chunk;

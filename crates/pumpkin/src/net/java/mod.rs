@@ -120,6 +120,8 @@ pub struct JavaClient {
     /// On `SClientTickEnd` (≥1.21.4), if still `false`, the player's known
     /// movement is zeroed (they stood still). Matches vanilla's `receivedMovementThisTick`.
     pub received_movement_this_tick: AtomicBool,
+    /// Consecutive movement packets spent hovering in the air (light anti-cheat).
+    pub floating_packets: std::sync::atomic::AtomicU32,
     /// The keep alive packet payload we send. The client should respond with the same id.
     pub keep_alive_id: AtomicCell<i64>,
     /// The last time we sent a keep alive packet.
@@ -259,6 +261,7 @@ impl JavaClient {
             player: ArcSwap::from_pointee(None),
             wait_for_keep_alive: AtomicBool::new(false),
             received_movement_this_tick: AtomicBool::new(false),
+            floating_packets: std::sync::atomic::AtomicU32::new(0),
             keep_alive_id: AtomicCell::new(0),
             last_keep_alive_time: AtomicCell::new(Instant::now()),
             last_packet_time: AtomicCell::new(Instant::now()),

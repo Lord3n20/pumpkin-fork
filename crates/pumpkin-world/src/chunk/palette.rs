@@ -450,6 +450,14 @@ impl<V: Hash + Eq + Copy + Default, const DIM: usize> PalettedContainer<V, DIM> 
         }
     }
 
+    /// The distinct values present in this container.
+    pub fn palette_values(&self) -> &[V] {
+        match self {
+            Self::Homogeneous(value) => std::slice::from_ref(value),
+            Self::Heterogeneous(data) => &data.palette,
+        }
+    }
+
     pub fn iter(&self) -> Box<dyn Iterator<Item = V> + '_> {
         match self {
             Self::Homogeneous(registry_id) => {

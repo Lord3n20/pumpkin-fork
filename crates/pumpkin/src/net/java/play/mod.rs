@@ -213,6 +213,7 @@ impl PumpkinError for ChatError {
     }
 }
 
+pub mod anticheat;
 pub mod attack;
 pub mod bundle_item_selected;
 pub mod change_difficulty;

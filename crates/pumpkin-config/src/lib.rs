@@ -15,6 +15,8 @@ use std::path::PathBuf;
 use std::{fs, num::NonZero, path::Path};
 use tracing::{debug, error, warn};
 
+/// Light anti-cheat and anti-xray options (Stierzunge fork).
+pub mod anticheat;
 /// Fun and experimental configuration options.
 pub mod fun;
 /// Server logging configuration options.
@@ -176,6 +178,10 @@ pub struct AdvancedConfiguration {
     pub plugins: PluginsConfig,
     /// Advancement configuration
     pub advancement: AdvancementConfig,
+    /// Light movement checks.
+    pub anticheat: anticheat::AntiCheatConfig,
+    /// Hiding of unexposed ores from clients.
+    pub anti_xray: anticheat::AntiXrayConfig,
 }
 
 /// Basic configuration for core server settings.

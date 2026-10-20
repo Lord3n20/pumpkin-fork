@@ -167,6 +167,20 @@ pub fn hash_seed(seed: u64) -> i64 {
     i64::from_le_bytes(bytes)
 }
 
+/// The hashed seed sent to clients in the login and respawn packets.
+/// With a seed secret set, clients get the hash of a value derived from the secret instead,
+/// so the hash cannot be used to verify guesses of the real seed. Clients only use it to
+/// blur biome borders, so the visible effect is minimal.
+#[must_use]
+pub fn client_hashed_seed(seed: u64) -> i64 {
+    let secret = pumpkin_util::random::seed_secret();
+    if secret == 0 {
+        hash_seed(seed)
+    } else {
+        hash_seed(secret.rotate_left(29) ^ 0x9E37_79B9_7F4A_7C15)
+    }
+}
+
 #[cfg(test)]
 mod test {
     use pumpkin_data::{chunk::Biome, dimension::Dimension};

@@ -100,6 +100,10 @@ impl JavaClient {
                 let pos = event.to;
                 let entity = &player.get_entity();
                 let last_pos = entity.pos.load();
+                let verdict = self.check_movement(player, server, last_pos, pos, packet.collision & FLAG_ON_GROUND != 0);
+                if self.enforce_movement(player, verdict) {
+                    return;
+                }
                 player.get_entity().set_pos(pos);
 
                 let distance = last_pos.squared_distance_to_vec(&pos).sqrt();
@@ -248,6 +252,10 @@ impl JavaClient {
                 let pos = event.to;
                 let entity = &player.get_entity();
                 let last_pos = entity.pos.load();
+                let verdict = self.check_movement(player, server, last_pos, pos, (packet.collision & FLAG_ON_GROUND) != 0);
+                if self.enforce_movement(player, verdict) {
+                    return;
+                }
                 player.get_entity().set_pos(pos);
 
                 let distance = last_pos.squared_distance_to_vec(&pos).sqrt();

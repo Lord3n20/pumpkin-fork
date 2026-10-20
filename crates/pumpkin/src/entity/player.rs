@@ -3995,7 +3995,7 @@ impl Player {
                         let packet = CRespawn::new(
                             PlayerSpawnData::new(
                                 new_world.dimension.clone(),
-                                biome::hash_seed(new_world.level.seed.0), // seed
+                                biome::client_hashed_seed(new_world.level.seed.0), // seed
                                 self.gamemode.load() as u8,
                                 self.previous_gamemode.load().unwrap_or(self.gamemode.load()) as i8,
                                 false,

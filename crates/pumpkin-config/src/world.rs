@@ -15,6 +15,11 @@ pub struct LevelConfig {
     /// Number of ticks between autosave checks. If 0, autosave is disabled.
     #[serde(default = "default_autosave_ticks")]
     pub autosave_ticks: u64,
+    /// Secret mixed into structure, feature, carver and slime-chunk seeds so the world seed
+    /// is much harder to crack from the world. 0 keeps vanilla placement.
+    /// Never change it for an existing world. (TOML integers are signed, hence i64.)
+    #[serde(default)]
+    pub seed_secret: i64,
     // TODO: More options
 }
 
@@ -28,6 +33,7 @@ impl Default for LevelConfig {
             chunk: ChunkConfig::default(),
             lighting: LightingEngineConfig::default(),
             autosave_ticks: default_autosave_ticks(),
+            seed_secret: 0,
         }
     }
 }

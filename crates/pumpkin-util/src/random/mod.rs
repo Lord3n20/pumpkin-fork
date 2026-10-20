@@ -15,6 +15,31 @@ pub mod xoroshiro128;
 /// Global seed uniquifier used to generate unique seeds based on time.
 static SEED_UNIQUIFIER: AtomicU64 = AtomicU64::new(8682522807148012u64);
 
+/// Secret mixed into every seed derivation that seed crackers read from the world
+/// (structure placement, decoration/ores, carvers, slime chunks). 0 means vanilla behaviour.
+/// Terrain and biome noise keep using the plain world seed.
+static SEED_SECRET: AtomicU64 = AtomicU64::new(0);
+
+/// Sets the seed secret. Must be called before any chunk is generated and must never
+/// change for an existing world, otherwise structures and features stop matching up at
+/// the border between old and new chunks.
+pub fn set_seed_secret(secret: u64) {
+    SEED_SECRET.store(secret, Ordering::Relaxed);
+}
+
+#[inline]
+#[must_use]
+pub fn seed_secret() -> u64 {
+    SEED_SECRET.load(Ordering::Relaxed)
+}
+
+/// The world seed as seen by structure and feature placement.
+#[inline]
+#[must_use]
+pub fn feature_world_seed(world_seed: u64) -> u64 {
+    world_seed ^ seed_secret()
+}
+
 pub fn get_seed() -> u64 {
     let seed = SEED_UNIQUIFIER
         .try_update(Ordering::Relaxed, Ordering::Relaxed, |val| {
@@ -66,6 +91,7 @@ macro_rules! population_seed_fn {
         /// # Returns
         /// A population seed for the given location.
         pub fn get_population_seed(world_seed: u64, block_x: i32, block_z: i32) -> u64 {
+            let world_seed = $crate::random::feature_world_seed(world_seed);
             let mut rand = Self::from_seed(world_seed);
             let l = rand.next_i64() | 1;
             let m = rand.next_i64() | 1;
@@ -114,6 +140,7 @@ pub const fn get_decorator_seed(population_seed: u64, index: u64, step: u64) -> 
 #[inline]
 #[must_use]
 pub fn get_region_seed(world_seed: u64, region_x: i32, region_z: i32, salt: u32) -> u64 {
+    let world_seed = feature_world_seed(world_seed);
     let x_part = i64::from(region_x).wrapping_mul(341873128712) as u64;
     let z_part = i64::from(region_z).wrapping_mul(132897987541) as u64;
 
@@ -138,7 +165,8 @@ pub fn get_region_seed(world_seed: u64, region_x: i32, region_z: i32, salt: u32)
 /// A seed value to be used with a legacy random generator.
 #[inline]
 #[must_use]
-pub const fn seed_slime_chunk(x: i32, z: i32, seed: u64, salt: u64) -> u64 {
+pub fn seed_slime_chunk(x: i32, z: i32, seed: u64, salt: u64) -> u64 {
+    let seed = feature_world_seed(seed);
     (seed
         .wrapping_add((x.wrapping_mul(x).wrapping_mul(4_987_142)) as i64 as u64)
         .wrapping_add((x.wrapping_mul(5_947_611)) as i64 as u64)
@@ -161,6 +189,7 @@ pub const fn seed_slime_chunk(x: i32, z: i32, seed: u64, salt: u64) -> u64 {
 #[inline]
 #[must_use]
 pub fn get_carver_seed(world_seed: u64, chunk_x: i32, chunk_z: i32) -> u64 {
+    let world_seed = feature_world_seed(world_seed);
     let mut random = LegacyRand::from_seed(world_seed);
     let l = random.next_i64() | 1;
     let m = random.next_i64() | 1;
@@ -184,6 +213,7 @@ pub fn get_carver_seed(world_seed: u64, chunk_x: i32, chunk_z: i32) -> u64 {
 #[inline]
 #[must_use]
 pub fn get_large_feature_seed(world_seed: u64, chunk_x: i32, chunk_z: i32) -> u64 {
+    let world_seed = feature_world_seed(world_seed);
     let mut random = LegacyRand::from_seed(world_seed);
     let x_scale = random.next_i64();
     let z_scale = random.next_i64();

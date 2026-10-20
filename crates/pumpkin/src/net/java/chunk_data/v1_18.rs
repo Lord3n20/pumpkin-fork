@@ -84,7 +84,12 @@ pub fn write_chunk_data(
 
         let mut zero_bytes_count = 0;
 
-        for (block_palette, biome_palette) in block_sections.iter().zip(biome_sections.iter()) {
+        // Anti-xray: send unexposed ores as stone
+        let obfuscated = pumpkin_world::anti_xray::get()
+            .and_then(|anti_xray| anti_xray.obfuscate(&block_sections, chunk.section.min_y));
+        let sent_sections = obfuscated.as_deref().unwrap_or(&block_sections);
+
+        for (block_palette, biome_palette) in sent_sections.iter().zip(biome_sections.iter()) {
             let non_empty_block_count = block_palette.non_air_block_count() as i16;
             blocks_and_biomes_buf.write_i16_be(non_empty_block_count)?;
             if version >= &JavaMinecraftVersion::V_26_1 {

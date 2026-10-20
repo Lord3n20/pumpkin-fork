@@ -68,10 +68,19 @@ async fn main() {
     let exec_dir = std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."));
 
     let config = PumpkinConfig::load(&exec_dir);
+    // Before any world exists, so every generated chunk uses the same secret
+    pumpkin_util::random::set_seed_secret(config.advanced.world.seed_secret as u64);
 
     let vanilla_data = VanillaData::load();
 
     pumpkin::init_logger(&config.advanced);
+
+    let anti_xray = &config.advanced.anti_xray;
+    pumpkin_world::anti_xray::configure(
+        anti_xray.enabled,
+        anti_xray.max_block_height,
+        &anti_xray.hidden_blocks,
+    );
 
     info!(
         "{}",
