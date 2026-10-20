@@ -8,6 +8,17 @@ Branch `stierzunge` basiert auf dem Release-Tag `0.2.0+26.3-26.51` (Minecraft 26
 - **`/forceload` lädt Chunks wirklich.** In Pumpkin 0.2.0 werden mit `/forceload` markierte Chunks nur getickt,
   solange ein Spieler sie ohnehin geladen hält; ohne Spieler werden sie weder geladen noch erzeugt.
   Der Fork setzt dafür – wie Vanilla – ein Lade-Ticket. Damit funktioniert Vorgenerieren per Plugin.
+- **Seed-Schutz** (`[world] seed_secret`, 0 = aus): Ein geheimer Wert wird in die Seeds für Strukturen,
+  Deko/Erze, Höhlen und Slime-Chunks gemischt; Clients bekommen einen davon abgeleiteten Seed-Hash.
+  Gelände und Biome bleiben wie bei Vanilla für den Seed, Tools wie SeedcrackerX finden den Seed
+  aber nicht mehr über Strukturen oder Erze. Nur für neue Welten setzen und danach nie ändern.
+- **Leichtes Anticheat** (`[anticheat]`): „zu schnell bewegt“ (Zurücksetzen bei mehr als 10 Blöcken pro
+  Bewegungspaket, mit Elytra 30) und Flug-Kick nach ~4 s Schweben ohne Block in der Nähe.
+  Creative, Spectator und Spieler mit Flugerlaubnis sind ausgenommen.
+- **Anti-Xray** (`[anti_xray]`): wie Paper engine-mode 1 – nicht freiliegende Erze gehen als Stein,
+  Deepslate bzw. Netherrack an den Client; bei Blockänderungen werden versteckte Blöcke im Umkreis
+  von 2 Blöcken aufgedeckt. Erze direkt an Chunk-Grenzen bleiben versteckt, bis in der Nähe etwas
+  abgebaut wird.
 - Upstream-Workflows entfernt, dafür `.github/workflows/stierzunge.yml`.
 
 ## Plugins
