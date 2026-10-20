@@ -35,6 +35,7 @@ pub mod chat;
 pub mod chunk_sender;
 pub use chunk_sender::ChunkSender;
 pub mod java;
+pub mod lss;
 pub mod lan_broadcast;
 pub mod packet_limiter;
 pub use packet_limiter::PacketRateLimiter;

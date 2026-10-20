@@ -17,6 +17,8 @@ use tracing::{debug, error, warn};
 
 /// Light anti-cheat and anti-xray options (Stierzunge fork).
 pub mod anticheat;
+/// Far terrain for LOD Server Support clients (Stierzunge fork).
+pub mod lod_server;
 /// Fun and experimental configuration options.
 pub mod fun;
 /// Server logging configuration options.
@@ -182,6 +184,8 @@ pub struct AdvancedConfiguration {
     pub anticheat: anticheat::AntiCheatConfig,
     /// Hiding of unexposed ores from clients.
     pub anti_xray: anticheat::AntiXrayConfig,
+    /// Far terrain for LOD Server Support clients.
+    pub lod_server: lod_server::LodServerConfig,
 }
 
 /// Basic configuration for core server settings.

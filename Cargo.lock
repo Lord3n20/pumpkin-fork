@@ -3360,6 +3360,7 @@ dependencies = [
  "rustc_version_runtime",
  "rustls",
  "rustyline",
+ "ruzstd",
  "serde",
  "serde_json",
  "serde_repr",

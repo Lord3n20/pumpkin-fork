@@ -1219,7 +1219,9 @@ impl JavaClient {
                 );
                 server.plugin_manager.fire_blocking(server, &mut event);
 
-                if channel_str == "minecraft:register" {
+                if channel_str.starts_with("lss:") {
+                    crate::net::lss::handle_payload(server, player, &channel_str, payload.data);
+                } else if channel_str == "minecraft:register" {
                     if let Ok(channels_data) = std::str::from_utf8(payload.data) {
                         for ch in channels_data.split('\0') {
                             if !ch.is_empty() {

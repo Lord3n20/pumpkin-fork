@@ -51,6 +51,7 @@ tokio = { workspace = true, features = [
 ] }
 thiserror.workspace = true
 futures.workspace = true
+ruzstd.workspace = true
 notify.workspace = true
 
 # config

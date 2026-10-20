@@ -1739,6 +1739,7 @@ impl World {
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             std::mem::take(&mut *guard)
         };
+        crate::net::lss::record_block_changes(self, changes.keys());
         // Anti-xray: ores next to a change may have been sent as stone, send their real state
         if let Some(anti_xray) = pumpkin_world::anti_xray::get() {
             let changed: Vec<BlockPos> = changes.keys().copied().collect();

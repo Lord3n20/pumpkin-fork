@@ -19,6 +19,19 @@ Branch `stierzunge` basiert auf dem Release-Tag `0.2.0+26.3-26.51` (Minecraft 26
   Deepslate bzw. Netherrack an den Client; bei Blockänderungen werden versteckte Blöcke im Umkreis
   von 2 Blöcken aufgedeckt. Erze direkt an Chunk-Grenzen bleiben versteckt, bis in der Nähe etwas
   abgebaut wird.
+- **LOD-Server für Voxy** (`[lod_server]`, `crates/pumpkin/src/net/lss/`): Server-Seite von
+  [LOD Server Support](https://github.com/VoX/lod-server-support) Protokoll 20 (alle LSS-Versionen für
+  MC 26.3). Liefert Clients mit LSS-Mod ferne Spalten bis `lod_distance_chunks` – aus geladenen Chunks
+  oder direkt aus den Regionsdateien, nie neu generiert (fehlende Spalten: „not generated“), mit
+  derselben Anti-Xray-Maske wie normale Chunk-Pakete und zstd, wenn der Client es kann.
+  Zeitstempel kommen aus den Anvil-Headern plus Änderungen im Speicher: gecachte Spalten werden nur neu
+  geschickt, wenn sie sich geändert haben; Änderungen meldet der Server alle `dirty_broadcast_seconds`
+  (`lss:dirty_columns`), Region-Summaries beschleunigen das Wiederverbinden. Ferne Spieler bis
+  `far_players_max_distance_blocks` (ohne Ausrüstung/Fahrzeuge). Bandbreite pro Spieler über
+  `max_bytes_per_second_per_player`. Nicht umgesetzt: die Alt-Protokolle 16/18/19 (nur LSS für ältere
+  MC-Versionen) und Generierung auf Anfrage (dafür gibt es das Pregen).
+- **Deadlock-Fix** beim Beitreten während `/forceload`-Pregen (Upstream-Bug: Lese-Lock auf
+  `active_chunks` über die parallelen Ticks gehalten).
 - **`enable_status`** (Grundeinstellung, Standard `true`): `false` beantwortet keine Serverlisten-Pings,
   wie Vanilla `enable-status=false` – unsichtbar für Scanner, Beitreten geht weiter.
 - **Uhrzeit im Datei-Log** (`logs/latest.log`, Ortszeit), vorher stand dort nur `[INFO] …`.
