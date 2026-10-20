@@ -731,7 +731,9 @@ impl pumpkin::plugin::server::HostServerWithStore<PluginHostState> for HasSelf<P
             .store
             .pump_blocking(&mut host, move || {
                 let dispatcher = server.command_dispatcher.load();
-                dispatcher.handle_command(&native_sender.into_source(&server), &command);
+                // Silent: feedback of plugin-run commands (e.g. forceload from the pregen
+                // plugin) would otherwise flood the log and every operator's chat
+                dispatcher.handle_command(&native_sender.into_source(&server).with_silent(), &command);
             })
             .await
     }

@@ -514,7 +514,8 @@ impl World {
         drop(tracker);
 
         // Like vanilla, force-loaded chunks are actually loaded (and generated if needed),
-        // not only ticked while a player happens to keep them loaded.
+        // not only ticked while a player happens to keep them loaded. A plain ticket, not
+        // a force ticket: those jump the generation queue and starve the players' chunks.
         if !forced_added.is_empty() || !forced_removed.is_empty() {
             let mut chunk_loading = self
                 .level
@@ -522,10 +523,16 @@ impl World {
                 .lock()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             for pos in forced_removed {
-                chunk_loading.remove_force_ticket(pos);
+                chunk_loading.remove_ticket(
+                    pos,
+                    pumpkin_world::chunk_system::ChunkLoading::FULL_CHUNK_LEVEL,
+                );
             }
             for pos in forced_added {
-                chunk_loading.add_force_ticket(pos);
+                chunk_loading.add_ticket(
+                    pos,
+                    pumpkin_world::chunk_system::ChunkLoading::FULL_CHUNK_LEVEL,
+                );
             }
             chunk_loading.send_change();
         }
