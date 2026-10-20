@@ -1589,10 +1589,13 @@ impl World {
 
         let entities_to_tick = self.entities.load();
         let entity_count = entities_to_tick.len();
+        // Snapshot instead of holding the read guard across the parallel ticks below: nested
+        // readers (e.g. the natural spawner) deadlock against a queued writer such as /forceload.
         let active_chunks = self
             .active_chunks
             .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
         let level_for_entities = self.level.clone();
         let entity_handle = handle.clone();
 
@@ -1993,10 +1996,12 @@ impl World {
         const INHABITED_TIME_BATCH_SIZE: usize = 1024;
         let random_tick_speed = self.level_info.load().game_rules.random_tick_speed;
 
+        // Snapshot, see World::tick: the spawners below read active_chunks again.
         let active_chunks = self
             .active_chunks
             .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone();
         let tick_data = self.level.get_tick_data(&active_chunks, random_tick_speed);
         let handle = server.runtime.clone();
 
