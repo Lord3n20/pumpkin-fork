@@ -105,6 +105,7 @@ impl JavaClient {
                     return;
                 }
                 player.get_entity().set_pos(pos);
+                self.glide_wall_damage(player, last_pos, pos, packet.collision);
 
                 let distance = last_pos.squared_distance_to_vec(&pos).sqrt();
                 let cm = (distance * 100.0) as i32;
@@ -257,6 +258,7 @@ impl JavaClient {
                     return;
                 }
                 player.get_entity().set_pos(pos);
+                self.glide_wall_damage(player, last_pos, pos, packet.collision);
 
                 let distance = last_pos.squared_distance_to_vec(&pos).sqrt();
                 let cm = (distance * 100.0) as i32;

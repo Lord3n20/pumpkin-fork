@@ -122,6 +122,8 @@ pub struct JavaClient {
     pub received_movement_this_tick: AtomicBool,
     /// Consecutive movement packets spent hovering in the air (light anti-cheat).
     pub floating_packets: std::sync::atomic::AtomicU32,
+    /// Horizontal distance of the last packet while gliding (wall damage).
+    pub glide_speed: crossbeam::atomic::AtomicCell<f64>,
     /// The keep alive packet payload we send. The client should respond with the same id.
     pub keep_alive_id: AtomicCell<i64>,
     /// The last time we sent a keep alive packet.
@@ -262,6 +264,7 @@ impl JavaClient {
             wait_for_keep_alive: AtomicBool::new(false),
             received_movement_this_tick: AtomicBool::new(false),
             floating_packets: std::sync::atomic::AtomicU32::new(0),
+            glide_speed: crossbeam::atomic::AtomicCell::new(0.0),
             keep_alive_id: AtomicCell::new(0),
             last_keep_alive_time: AtomicCell::new(Instant::now()),
             last_packet_time: AtomicCell::new(Instant::now()),

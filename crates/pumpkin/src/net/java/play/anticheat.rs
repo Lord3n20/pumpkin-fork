@@ -4,7 +4,9 @@
 #[allow(clippy::wildcard_imports)]
 use super::*;
 use pumpkin_data::BlockState;
+use pumpkin_data::damage::DamageType;
 use pumpkin_data::effect::StatusEffect;
+use pumpkin_protocol::java::server::play::FLAG_IN_WALL;
 
 pub enum MoveVerdict {
     Allow,
@@ -15,6 +17,31 @@ pub enum MoveVerdict {
 }
 
 impl JavaClient {
+    /// Vanilla "flew into a wall": losing horizontal speed in a collision
+    /// while gliding hurts by `lost_speed * 10 - 3`.
+    pub(super) fn glide_wall_damage(
+        &self,
+        player: &Arc<Player>,
+        last_pos: Vector3<f64>,
+        new_pos: Vector3<f64>,
+        collision: u8,
+    ) {
+        let entity = player.get_entity();
+        if !entity.is_fall_flying() {
+            self.glide_speed.store(0.0);
+            return;
+        }
+        let speed = (new_pos.x - last_pos.x).hypot(new_pos.z - last_pos.z);
+        let before = self.glide_speed.swap(speed);
+        if collision & FLAG_IN_WALL == 0 || matches!(player.gamemode.load(), GameMode::Creative | GameMode::Spectator) {
+            return;
+        }
+        let damage = ((before - speed) * 10.0 - 3.0) as f32;
+        if damage > 0.0 {
+            player.living_entity.damage(player.as_ref(), damage, DamageType::FLY_INTO_WALL);
+        }
+    }
+
     pub(super) fn check_movement(
         &self,
         player: &Arc<Player>,
