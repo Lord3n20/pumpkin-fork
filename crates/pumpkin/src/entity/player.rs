@@ -2195,6 +2195,17 @@ impl Player {
             .is_space_empty(aabb.contract_all(1.0E-7))
     }
 
+    /// Whether the chest slot holds an item that allows gliding (elytra).
+    #[must_use]
+    pub fn has_glider(&self) -> bool {
+        self.inventory()
+            .entity_equipment
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get(&EquipmentSlot::CHEST)
+            .has_data_component(pumpkin_data::data_component::DataComponent::Glider)
+    }
+
     #[must_use]
     pub fn get_desired_pose(&self) -> EntityPose {
         let entity = self.get_entity();
@@ -2640,6 +2651,11 @@ impl Player {
     #[expect(clippy::too_many_lines)]
     pub fn tick<'a>(&'a self, server: &'a Server) {
         self.process_inbound_packets();
+
+        // Vanilla stops gliding as soon as the chest slot holds no glider.
+        if self.living_entity.entity.is_fall_flying() && !self.has_glider() {
+            self.living_entity.entity.set_fall_flying(false);
+        }
 
         if self.is_spectator() {
             self.living_entity

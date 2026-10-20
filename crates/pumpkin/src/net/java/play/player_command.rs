@@ -48,7 +48,7 @@ impl JavaClient {
                 debug!("todo");
             }
             Action::StartFlyingElytra => {
-                let fall_flying = entity.check_fall_flying();
+                let fall_flying = entity.check_fall_flying() && player.has_glider();
                 if entity.is_fall_flying() != fall_flying {
                     let mut event = crate::plugin::api::events::entity::entity_toggle_glide::EntityToggleGlideEvent::new(
                         entity.entity_id,
