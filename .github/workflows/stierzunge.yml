@@ -1,0 +1,65 @@
+# Builds the server binary (x86_64 musl) and the WASM plugins, and attaches them to a release.
+# Start: push a tag like stierzunge-0.2.0-1, or run the workflow by hand.
+name: Stierzunge build
+
+on:
+  push:
+    tags:
+      - "stierzunge-*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  CARGO_TERM_COLOR: always
+  # pumpkin-data has huge generated files; rustc needs a bigger stack for them
+  RUST_MIN_STACK: "268435456"
+  # Thin LTO keeps the build within a reasonable number of Actions minutes
+  CARGO_PROFILE_RELEASE_LTO: thin
+  CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y musl-tools
+          rustup update stable && rustup default stable
+          rustup target add x86_64-unknown-linux-musl wasm32-wasip2
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build server
+        run: cargo build --release --bin pumpkin --target x86_64-unknown-linux-musl
+
+      - name: Build plugins
+        run: stierzunge/plugins.sh
+
+      - name: Collect files
+        run: |
+          mkdir -p dist
+          cp target/x86_64-unknown-linux-musl/release/pumpkin dist/pumpkin-X64-Linux-musl
+          cp stierzunge/dist/plugins/*.wasm dist/
+          (cd dist && sha256sum * > checksums.sha256)
+          ls -la dist
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "$GITHUB_REF_NAME" \
+            --notes "Built from $(git rev-parse --short HEAD)."
+
+      - name: Keep files (manual run)
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: stierzunge-dist
+          path: dist/

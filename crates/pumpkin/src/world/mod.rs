@@ -475,7 +475,8 @@ impl World {
         for id in removed_players {
             tracker.remove_player(id, &mut active_chunks);
         }
-        tracker.sync_forced_chunks(&forced_chunks, &mut active_chunks, &mut newly_active);
+        let (forced_added, forced_removed) =
+            tracker.sync_forced_chunks(&forced_chunks, &mut active_chunks, &mut newly_active);
 
         for pos in newly_active {
             if self.level.is_chunk_loaded(&pos) && tracker.loaded_active_chunks.insert(pos) {
@@ -511,6 +512,23 @@ impl World {
         let spawnable_chunks = tracker.loaded_active_chunks.len() as i32;
         drop(active_chunks);
         drop(tracker);
+
+        // Like vanilla, force-loaded chunks are actually loaded (and generated if needed),
+        // not only ticked while a player happens to keep them loaded.
+        if !forced_added.is_empty() || !forced_removed.is_empty() {
+            let mut chunk_loading = self
+                .level
+                .chunk_loading
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            for pos in forced_removed {
+                chunk_loading.remove_force_ticket(pos);
+            }
+            for pos in forced_added {
+                chunk_loading.add_force_ticket(pos);
+            }
+            chunk_loading.send_change();
+        }
 
         self.spawn_state.store(Arc::new(SpawnState::new(
             spawnable_chunks,
